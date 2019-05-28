@@ -6,7 +6,7 @@ import statistics
 img = cv.imread('puzzles/mania_15x15_01.png')
 img = img[131:-131, 7:-7]  # Crop image to puzzle
 
-# Threshold puzzle to try to enhance lines
+# Threshold puzzle to try to enhance grid lines
 gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 _, gray_img = cv.threshold(gray_img, 60, 255, cv.THRESH_TOZERO)
 _, gray_img = cv.threshold(gray_img, 80, 255, cv.THRESH_TOZERO_INV)
@@ -14,7 +14,7 @@ _, gray_img = cv.threshold(gray_img, 80, 255, cv.THRESH_TOZERO_INV)
 # cv.waitKey(0)
 # cv.destroyAllWindows()
 
-# Detect vertical lines
+# Detect vertical grid lines
 lines = cv.HoughLines(gray_img, 1, np.pi / 180, 200, max_theta=0.01)
 lines.sort(axis=0)
 line_diff = []
@@ -22,35 +22,32 @@ for line1, line2 in zip(lines[:-1], lines[1:]):
     coord1, coord2 = line1[0][0], line2[0][0]
     line_diff.append(coord2 - coord1)
 
-cell_size = statistics.median(line_diff)
-n = int(round(img.shape[0] / cell_size))
-cell_size = img.shape[0] / n
+cell_size = statistics.median(line_diff)  # Estimated cell size
+n = int(round(img.shape[0] / cell_size))  # Size of board
+cell_size = img.shape[0] / n  # Use n to get exact cell size
 print(cell_size)
 print(n)
 
 colors = set()
-
 for i in range(n):
     x = int(round(cell_size / 2 + i * cell_size))
     for j in range(n):
         y = int(round(cell_size / 2 + j * cell_size))
-        cv.circle(img, (x, y), 2, (255, 255, 255), 3)
-        contains_color = False
+        unique_color = True
         image_color = tuple(img[x, y])
         for color in colors:
             colors_similar = True
             for channel, image_channel in zip(color, image_color):
-                print(channel, image_channel)
-                if abs(int(channel) - int(image_channel)) > 5:
+                if abs(int(channel) - int(image_channel)) > 10:
                     colors_similar = False
                     break
             if colors_similar:
-                contains_color = True
+                unique_color = False
                 break
-        if not contains_color:
+        if unique_color:
+            cv.circle(img, (y, x), 2, (0, 0, 0), 3)
             colors.add(image_color)
 
-# TODO: # COLORS BROKEN
 print(len(colors))
 print(colors)
 
